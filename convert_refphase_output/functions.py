@@ -40,13 +40,11 @@ def calculate_confidence_intervals_logr(seg_sample_df, ci_value=0.95, n_bootstra
     lower_bound = np.percentile(bootstrap_values, (1 - ci_value) / 2 * 100)
     upper_bound = np.percentile(bootstrap_values, (1 + ci_value) / 2 * 100)
     ci_span = upper_bound - lower_bound
-    # center around the original cn_tot value:
-    lower_bound = cn_tot - ci_span / 2
-    upper_bound = cn_tot + ci_span / 2
     if cn_tot > 0:
         a_frac = seg_sample_df["cn_a"].values[0] / cn_tot
         b_frac = seg_sample_df["cn_b"].values[0] / cn_tot
     else:
+        # to avoid division by zero in homozygous deletions:
         a_frac, b_frac = 0.5, 0.5
     # apply the ratio to bounds:
     ## prevent negative values

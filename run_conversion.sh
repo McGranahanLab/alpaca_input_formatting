@@ -4,11 +4,12 @@
 
 
 usage() {
-    echo "Usage: $0 --tumour_id TUMOUR_ID --refphase_rData RDATA_PATH --CONIPHER_tree_object TREE_OBJECT_PATH --output_dir OUTPUT_DIR"
+    echo "Usage: $0 --tumour_id TUMOUR_ID --refphase_rData RDATA_PATH --ascat_rds ASCAT_RDS_PATH --CONIPHER_tree_object TREE_OBJECT_PATH --output_dir OUTPUT_DIR"
     echo
     echo "Arguments:"
     echo "  --tumour_id              Tumour ID (required)"
     echo "  --refphase_rData         Path to refphase .RData file (required)"
+    echo "  --ascat_rds              Path to ASCAT rds file (required)"
     echo "  --CONIPHER_tree_object   Path to CONIPHER tree object .RDS file (required)"
     echo "  --output_dir             Output directory (required)"
     echo "  --help                   Display this help message"
@@ -20,6 +21,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         --tumour_id) tumour_id="$2"; shift ;;
         --refphase_rData) refphase_rData="$2"; shift ;;
+        --ascat_rds) ascat_rds="$2"; shift ;;
         --CONIPHER_tree_object) CONIPHER_tree_object="$2"; shift ;;
         --output_dir) output_dir="$2"; shift ;;
         --help) usage ;;
@@ -29,7 +31,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if required arguments are provided
-if [ -z "$tumour_id" ] || [ -z "$refphase_rData" ] || [ -z "$CONIPHER_tree_object" ] || [ -z "$output_dir" ]; then
+if [ -z "$tumour_id" ] || [ -z "$refphase_rData" ] || [ -z "$ascat_rds" ] || [ -z "$CONIPHER_tree_object" ] || [ -z "$output_dir" ]; then
     echo "Error: All arguments are required"
     usage
 fi
@@ -45,6 +47,7 @@ mkdir -p $output_dir
 echo "Extracting data from REFPHASE output"
 Rscript "${SCRIPT_DIR}/convert_refphase_output/extract_rephase_data.R" \
     --refphase_rData $refphase_rData \
+    --ascat_rds $ascat_rds \
     --output_dir $output_dir
 
 refphase_segments_path="${output_dir}/phased_segs.tsv"

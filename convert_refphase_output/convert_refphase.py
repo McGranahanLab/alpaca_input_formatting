@@ -54,6 +54,9 @@ refphase_segments = pd.read_csv(args.refphase_segments, sep="\t")
 refphase_snps = pd.read_csv(args.refphase_snps, sep="\t")
 refphase_purity_ploidy = pd.read_csv(args.refphase_purity_ploidy, sep="\t")
 
+# load ASCAT output for segments which were not updated by refPhase:
+
+
 # remove segments with fewer than 5 heterozygous SNPs:
 refphase_segments = refphase_segments[
     refphase_segments["heterozygous_SNP_number"] >= args.heterozygous_SNPs_threshold
@@ -86,28 +89,6 @@ refphase_segments["segment"] = (
     + refphase_segments["end"].astype(str)
 )
 
-# keep only relevant columns:
-print(f"Creating ALPACA input table for {tumour_id}")
-alpaca_input = refphase_segments[["sample", "chr", "segment", "cn_a", "cn_b"]].copy()
-# rename columns:
-alpaca_input = alpaca_input.rename(
-    columns={
-        "cn_a": "cpnA",
-        "cn_b": "cpnB",
-    }
-)
-
-alpaca_input["tumour_id"] = tumour_id
-# write to file:
-
-alpaca_input.to_csv(f"{output_dir}/ALPACA_input_table.csv", index=False)
-
-# split input into separate files for each segment to faciliate parallel processing:
-for segment in alpaca_input["segment"].unique():
-    alpaca_input[alpaca_input["segment"] == segment].to_csv(
-        f"{output_dir_segments}/ALPACA_input_table_{tumour_id}_{segment}.csv",
-        index=False,
-    )
 
 ## calculate confidence intervals:
 print(f"Calculating confidence intervals for {tumour_id}")
@@ -162,3 +143,27 @@ for allele in ["a", "b"]:
 ci_table.drop(columns=["cn_a", "cn_b", "was_cn_updated"], inplace=True)
 ci_table.to_csv(f"{output_dir}/ci_table.csv", index=False)
 print(f'{tumour_id} done')
+
+# TODO create input based on CI table instead
+# keep only relevant columns:
+print(f"Creating ALPACA input table for {tumour_id}")
+alpaca_input = refphase_segments[["sample", "chr", "segment", "cn_a", "cn_b"]].copy()
+# rename columns:
+alpaca_input = alpaca_input.rename(
+    columns={
+        "cn_a": "cpnA",
+        "cn_b": "cpnB",
+    }
+)
+
+alpaca_input["tumour_id"] = tumour_id
+# write to file:
+
+alpaca_input.to_csv(f"{output_dir}/ALPACA_input_table.csv", index=False)
+
+# split input into separate files for each segment to faciliate parallel processing:
+for segment in alpaca_input["segment"].unique():
+    alpaca_input[alpaca_input["segment"] == segment].to_csv(
+        f"{output_dir_segments}/ALPACA_input_table_{tumour_id}_{segment}.csv",
+        index=False,
+    )
