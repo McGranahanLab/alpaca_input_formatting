@@ -111,10 +111,10 @@ def calculate_confidence_intervals(seg_sample_df, ci_value=0.95, n_bootstrap=100
 
 
     return pd.DataFrame(
-        {   f"cn_frac_A": cn_frac['A'],
+        {   f"cpnA": cn_frac['A'],
             f"lower_CI_A": cis['A']['lower_CI'],
             f"upper_CI_A": cis['A']['upper_CI'],
-            f"cn_frac_B": cn_frac['B'],
+            f"cpnB": cn_frac['B'],
             f"lower_CI_B": cis['B']['lower_CI'],
             f"upper_CI_B": cis['B']['upper_CI'],
         },

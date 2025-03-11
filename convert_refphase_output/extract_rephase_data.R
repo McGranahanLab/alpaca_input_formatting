@@ -21,4 +21,10 @@ for (sample_name in names(ascat_output)) {
     df_list[[sample_name]] <- df
 }
 ascat_segments <- do.call(rbind, df_list)
+# remove 'chr' prefix from chromosome names:
+ascat_segments$chrom = gsub("chr", "", ascat_segments$chrom)
+# rename column chrom to chr:
+colnames(ascat_segments)[colnames(ascat_segments) == "chrom"] = "chr"
+# add segment column:
+ascat_segments$segment = paste(ascat_segments$chr, ascat_segments$start, ascat_segments$stop, sep = "_")
 write.table(ascat_segments, file = paste0(args$output_dir, "/ascat_segments.tsv"), sep = "\t", row.names = FALSE)
