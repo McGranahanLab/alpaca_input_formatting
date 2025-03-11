@@ -1,7 +1,7 @@
 import pandas as pd
 import argparse
 import os
-from functions import calculate_confidence_intervals_logr
+from functions import calculate_confidence_intervals
 # arguments
 parser = argparse.ArgumentParser(
     description="Calculate confidence intervals from refphase output"
@@ -54,16 +54,9 @@ refphase_segments = pd.read_csv(args.refphase_segments, sep="\t")
 refphase_snps = pd.read_csv(args.refphase_snps, sep="\t")
 refphase_purity_ploidy = pd.read_csv(args.refphase_purity_ploidy, sep="\t")
 
-# load ASCAT output for segments which were not updated by refPhase:
 
-
-# remove segments with fewer than 5 heterozygous SNPs:
-refphase_segments = refphase_segments[
-    refphase_segments["heterozygous_SNP_number"] >= args.heterozygous_SNPs_threshold
-]
 
 # rename columns:
-
 refphase_segments = refphase_segments.rename(
     columns={
         "group_name": "sample",
@@ -89,12 +82,20 @@ refphase_segments["segment"] = (
     + refphase_segments["end"].astype(str)
 )
 
+# remove segments with fewer than args.heterozygous_SNPs_threshold heterozygous SNPs:
+# use this to use total number accross all samples:
+# SNP_count = refphase_segments.groupby('segment')['heterozygous_SNP_number'].sum().sort_values()
+# segments_above_threshold = SNP_count[SNP_count>args.heterozygous_SNPs_threshold]
+
+# use this to use number of heterozygous SNPs in each sample:
+refphase_segments = refphase_segments.groupby('segment').filter(lambda x: (x['heterozygous_SNP_number'] >= args.heterozygous_SNPs_threshold).all())
+
 
 ## calculate confidence intervals:
 print(f"Calculating confidence intervals for {tumour_id}")
 # assign SNPS to segments:
 snps_with_segments = refphase_snps.merge(
-    refphase_segments[["chr", "start", "end", "segment", "sample", "cn_a", "cn_b"]],
+    refphase_segments,
     left_on=["sample", "chr"],
     right_on=["sample", "chr"],
     how="inner",
@@ -108,27 +109,32 @@ snps_with_segments_purity_ploidy = snps_with_segments.merge(
     refphase_purity_ploidy, left_on="sample",right_on='sample_id', how="inner"
 )
 
+
 # estimate the confidence intervals:
 confidence_intervals = (
     snps_with_segments_purity_ploidy.groupby(["segment", "sample"])
     .apply(
-        calculate_confidence_intervals_logr, ci_value=ci_value, n_bootstrap=n_bootstrap
+        calculate_confidence_intervals, ci_value=ci_value, n_bootstrap=n_bootstrap
     )
     .reset_index()
 )
+
 ci_table = confidence_intervals.merge(refphase_segments)[
     [
         "segment",
         "sample",
         "cn_a",
         "cn_b",
+        "cpnA",
+        "cpnB",
         "lower_CI_A",
         "upper_CI_A",
         "lower_CI_B",
         "upper_CI_B",
         "was_cn_updated",
     ]
-]
+].drop_duplicates()
+
 ci_table["tumour_id"] = tumour_id
 ci_table["ci_value"] = ci_value
 
@@ -140,23 +146,14 @@ for allele in ["a", "b"]:
         ci_table[f"cn_{allele}"] < ci_table[f"upper_CI_{allele}"]
     ), f"cn_{allele} < upper_CI_{allele}"
 
-ci_table.drop(columns=["cn_a", "cn_b", "was_cn_updated"], inplace=True)
+# TODO after testing, remove redundant columns"
+# ci_table.drop(columns=["cn_a", "cn_b","cpnA", "cpnB", "was_cn_updated"], inplace=True)
 ci_table.to_csv(f"{output_dir}/ci_table.csv", index=False)
 print(f'{tumour_id} done')
 
-# TODO create input based on CI table instead
 # keep only relevant columns:
 print(f"Creating ALPACA input table for {tumour_id}")
-alpaca_input = refphase_segments[["sample", "chr", "segment", "cn_a", "cn_b"]].copy()
-# rename columns:
-alpaca_input = alpaca_input.rename(
-    columns={
-        "cn_a": "cpnA",
-        "cn_b": "cpnB",
-    }
-)
-
-alpaca_input["tumour_id"] = tumour_id
+alpaca_input = ci_table[["tumour_id","sample","segment", "cpnA", "cpnB"]].copy()
 # write to file:
 
 alpaca_input.to_csv(f"{output_dir}/ALPACA_input_table.csv", index=False)
