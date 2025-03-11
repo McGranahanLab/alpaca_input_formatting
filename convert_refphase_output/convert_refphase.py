@@ -55,7 +55,6 @@ refphase_snps = pd.read_csv(args.refphase_snps, sep="\t")
 refphase_purity_ploidy = pd.read_csv(args.refphase_purity_ploidy, sep="\t")
 
 
-
 # rename columns:
 refphase_segments = refphase_segments.rename(
     columns={
