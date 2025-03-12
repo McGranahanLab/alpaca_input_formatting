@@ -137,13 +137,13 @@ ci_table = confidence_intervals.merge(refphase_segments)[
 ci_table["tumour_id"] = tumour_id
 ci_table["ci_value"] = ci_value
 
-for allele in ["a", "b"]:
+for allele in ["A", "B"]:
     assert all(
-        ci_table[f"cn_{allele}"] >= ci_table[f"lower_CI_{allele}"]
-    ), f"cn_{allele} >= lower_CI_{allele}"
+        ci_table[f"cpn{allele}"] >= ci_table[f"lower_CI_{allele}"]
+    ), f"cpn{allele} >= lower_CI_{allele}"
     assert all(
-        ci_table[f"cn_{allele}"] < ci_table[f"upper_CI_{allele}"]
-    ), f"cn_{allele} < upper_CI_{allele}"
+        ci_table[f"cpn{allele}"] < ci_table[f"upper_CI_{allele}"]
+    ), f"cpn{allele} < upper_CI_{allele}"
 
 # TODO after testing, remove redundant columns"
 # ci_table.drop(columns=["cn_a", "cn_b","cpnA", "cpnB", "was_cn_updated"], inplace=True)
